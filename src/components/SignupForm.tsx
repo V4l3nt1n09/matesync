@@ -37,6 +37,7 @@ export default function SignupForm() {
   const [comment, setComment] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [consent, setConsent] = useState(false);
 
   useEffect(() => {
     supabase
@@ -60,6 +61,11 @@ export default function SignupForm() {
 
     if (!consoleType || !frequency) {
       setErrorMessage("Merci de répondre à toutes les questions obligatoires.");
+      return;
+    }
+
+    if (!consent) {
+      setErrorMessage("Merci de cocher la case de consentement pour continuer.");
       return;
     }
 
@@ -244,6 +250,30 @@ export default function SignupForm() {
               placeholder="toi@exemple.com"
               className="rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-accent"
             />
+          </label>
+
+          <label className="flex items-start gap-3 text-sm text-muted">
+            <input
+              type="checkbox"
+              id="consent-checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-1 h-4 w-4 shrink-0 accent-accent"
+            />
+            <span>
+              J&apos;accepte que MateSync utilise mon email et mes réponses
+              uniquement pour me recontacter à propos du lancement de
+              l&apos;app. Aucune donnée n&apos;est vendue ni partagée avec
+              des tiers. Je peux demander la suppression de mes données à
+              tout moment à{" "}
+              <a
+                href="mailto:contact@matesync.fr"
+                className="text-foreground underline underline-offset-2"
+              >
+                contact@matesync.fr
+              </a>
+              .
+            </span>
           </label>
 
           {errorMessage && (
