@@ -1,0 +1,21 @@
+<svg width="1024" height="1024" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="32%" cy="26%" r="85%">
+      <stop offset="0%" stop-color="#1c1530"/>
+      <stop offset="100%" stop-color="#0a0912"/>
+    </radialGradient>
+    <linearGradient id="barGrad" x1="98" y1="0" x2="414" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8c5cf6"/>
+      <stop offset="100%" stop-color="#ff6aa8"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+
+  <g transform="rotate(-11 256 256)">
+    <path d="M246,208 H154 A48,48 0 0 0 154,304 H246 Z" fill="url(#barGrad)"/>
+    <path d="M266,208 H358 A48,48 0 0 1 358,304 H266 Z" fill="url(#barGrad)"/>
+    <circle cx="140" cy="256" r="14" fill="#f3f1f8" opacity="0.94"/>
+    <circle cx="372" cy="256" r="14" fill="#f3f1f8" opacity="0.94"/>
+  </g>
+</svg>
