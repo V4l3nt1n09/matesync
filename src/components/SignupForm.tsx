@@ -19,7 +19,6 @@ const FREQUENCY_OPTIONS: { value: Frequency; label: string }[] = [
 const MOTIVATION_OPTIONS = [
   "Trouver des partenaires pour jouer en coop",
   "Trouver des adversaires pour du versus / compétitif",
-  "Rencontrer des joueurs en ligne, peu importe où",
   "Construire un groupe de jeu régulier",
   "Autre",
 ];
