@@ -7,7 +7,7 @@ const steps = [
   {
     step: "02",
     title: "Sois mis en relation",
-    text: "MateSync te propose des joueurs compatibles près de chez toi ou en ligne.",
+    text: "MateSync te propose des joueurs compatibles avec tes jeux et tes horaires.",
   },
   {
     step: "03",
