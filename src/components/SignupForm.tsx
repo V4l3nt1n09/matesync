@@ -23,6 +23,35 @@ const MOTIVATION_OPTIONS = [
   "Autre",
 ];
 
+const GAME_SUGGESTIONS = [
+  "Mario Kart 8 Deluxe",
+  "Mario Party Superstars",
+  "Super Mario Party",
+  "Super Smash Bros. Ultimate",
+  "Jackbox Party Pack",
+  "Super Mario 3D World + Bowser's Fury",
+  "New Super Mario Bros. U Deluxe",
+  "Kirby et le Monde Oublié",
+  "Kirby's Return to Dream Land Deluxe",
+  "Overcooked! 2",
+  "It Takes Two",
+  "Unravel Two",
+  "Cuphead",
+  "Luigi's Mansion 3",
+  "Pikmin 4",
+  "Animal Crossing: New Horizons",
+  "Minecraft",
+  "Terraria",
+  "Stardew Valley",
+  "Don't Starve Together",
+  "Splatoon 3",
+  "Tetris 99",
+  "Mario Strikers: Battle League",
+  "Mario Golf: Super Rush",
+  "Mario Tennis Aces",
+  "Rocket League",
+];
+
 type Status = "idle" | "submitting" | "success" | "error";
 
 export default function SignupForm() {
@@ -221,8 +250,14 @@ export default function SignupForm() {
               value={favoriteGames}
               onChange={(e) => setFavoriteGames(e.target.value)}
               placeholder="Mario Kart, Splatoon, Animal Crossing..."
+              list="game-suggestions"
               className="rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-accent"
             />
+            <datalist id="game-suggestions">
+              {GAME_SUGGESTIONS.map((game) => (
+                <option key={game} value={game} />
+              ))}
+            </datalist>
           </label>
 
           <label className="flex flex-col gap-2">
