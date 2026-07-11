@@ -6,6 +6,7 @@ Liste de jeux populaires, réellement jouables à plusieurs, pour alimenter les 
 
 ## Party / local
 
+- Mario Kart World — jusqu'à 4 en local, 24 en ligne (exclusivité Switch 2)
 - Mario Kart 8 Deluxe — jusqu'à 4 en local, 8+ en ligne
 - Mario Party Superstars — jusqu'à 4 en local/ligne
 - Super Mario Party — jusqu'à 4 en local/ligne

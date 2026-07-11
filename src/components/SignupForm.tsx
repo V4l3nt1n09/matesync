@@ -24,6 +24,7 @@ const MOTIVATION_OPTIONS = [
 ];
 
 const GAME_SUGGESTIONS = [
+  "Mario Kart World",
   "Mario Kart 8 Deluxe",
   "Mario Party Superstars",
   "Super Mario Party",
