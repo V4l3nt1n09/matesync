@@ -27,7 +27,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MateSync a besoin d'accéder à tes photos pour choisir ta photo de profil.",
+          "cameraPermission": "MateSync a besoin de la caméra pour prendre ta photo de profil."
+        }
+      ]
     ]
   }
 }

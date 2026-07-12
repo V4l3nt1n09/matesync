@@ -2,6 +2,7 @@ import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -29,7 +30,9 @@ export default function HomeScreen() {
     if (!session) return;
     supabase
       .from("profiles")
-      .select("id, console, frequency, favorite_games")
+      .select(
+        "id, console, frequency, favorite_games, pseudo, avatar_url, switch_friend_code",
+      )
       .eq("id", session.user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -50,7 +53,7 @@ export default function HomeScreen() {
     return <Redirect href="/" />;
   }
 
-  if (!profile || !profile.console) {
+  if (!profile || !profile.console || !profile.pseudo) {
     return <Redirect href="/profile-setup" />;
   }
 
@@ -61,18 +64,35 @@ export default function HomeScreen() {
         { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 24 },
       ]}
     >
+      {profile.avatar_url ? (
+        <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+      ) : null}
       <View style={styles.badge}>
         <View style={styles.dot} />
         <Text style={styles.badgeText}>Profil créé</Text>
       </View>
-      <Text style={styles.title}>C&apos;est parti !</Text>
+      <Text style={styles.title}>Salut {profile.pseudo} !</Text>
       <Text style={styles.sub}>
         Console : {CONSOLE_LABELS[profile.console] ?? profile.console}
       </Text>
+      {profile.favorite_games.length > 0 ? (
+        <Text style={styles.sub}>
+          Jeux : {profile.favorite_games.join(", ")}
+        </Text>
+      ) : null}
+      {profile.switch_friend_code ? (
+        <Text style={styles.sub}>Code ami : {profile.switch_friend_code}</Text>
+      ) : null}
       <Text style={styles.note}>
         La suite (découverte de joueurs, chat, sessions) arrive dans les
         prochaines mises à jour de l&apos;app.
       </Text>
+      <Pressable
+        style={styles.btnGhost}
+        onPress={() => router.push("/profile-setup")}
+      >
+        <Text style={styles.btnGhostText}>Compléter mon profil</Text>
+      </Pressable>
 
       <Pressable
         style={styles.btnGhost}
@@ -95,6 +115,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: 24,
+  },
+  avatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginBottom: 16,
   },
   badge: {
     flexDirection: "row",

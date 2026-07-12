@@ -22,4 +22,7 @@ export interface Profile {
   console: Console | null;
   frequency: Frequency | null;
   favorite_games: string[];
+  pseudo: string | null;
+  avatar_url: string | null;
+  switch_friend_code: string | null;
 }
