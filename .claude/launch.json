@@ -10,9 +10,16 @@
     {
       "name": "matesync-mobile",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start"],
+      "runtimeArgs": ["expo", "start", "--tunnel"],
       "cwd": "mobile",
       "port": 8081
+    },
+    {
+      "name": "matesync-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8082"],
+      "cwd": "mobile",
+      "port": 8082
     }
   ]
 }
