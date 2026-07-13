@@ -1,0 +1,59 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="30%" cy="12%" r="95%">
+      <stop offset="0%" stop-color="#221a38"/>
+      <stop offset="55%" stop-color="#120f1e"/>
+      <stop offset="100%" stop-color="#0a0912"/>
+    </radialGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8c5cf6"/>
+      <stop offset="100%" stop-color="#ff6aa8"/>
+    </linearGradient>
+    <symbol id="logo" viewBox="0 0 512 512">
+      <radialGradient id="logoBg" cx="32%" cy="26%" r="85%">
+        <stop offset="0%" stop-color="#1c1530"/>
+        <stop offset="100%" stop-color="#0a0912"/>
+      </radialGradient>
+      <linearGradient id="barGrad" x1="98" y1="0" x2="414" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#8c5cf6"/>
+        <stop offset="100%" stop-color="#ff6aa8"/>
+      </linearGradient>
+      <circle cx="256" cy="256" r="256" fill="url(#logoBg)"/>
+      <g transform="rotate(-11 256 256)">
+        <path d="M246,208 H154 A48,48 0 0 0 154,304 H246 Z" fill="url(#barGrad)"/>
+        <path d="M266,208 H358 A48,48 0 0 1 358,304 H266 Z" fill="url(#barGrad)"/>
+        <circle cx="140" cy="256" r="14" fill="#f3f1f8" opacity="0.94"/>
+        <circle cx="372" cy="256" r="14" fill="#f3f1f8" opacity="0.94"/>
+      </g>
+    </symbol>
+  </defs>
+
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+
+  <text x="80" y="130" font-family="ui-monospace, SF Mono, Menlo, monospace" font-size="22" letter-spacing="2" fill="#9d99b9">MATESYNC &#183; PRÉSENTATION</text>
+
+  <use href="#logo" x="440" y="160" width="200" height="200"/>
+
+  <text x="540" y="440" text-anchor="middle" font-family="Avenir Next, Futura, sans-serif" font-weight="800" font-size="88" letter-spacing="-1.5" fill="#f3f1f8">Mate<tspan fill="url(#textGrad)">Sync</tspan></text>
+
+  <text x="540" y="500" text-anchor="middle" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="30" fill="#c9c6dc">Trouve des joueurs compatibles avec</text>
+  <text x="540" y="538" text-anchor="middle" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="30" fill="#c9c6dc">tes jeux et tes horaires.</text>
+
+  <!-- pillars -->
+  <g font-family="Avenir Next, Futura, sans-serif" font-weight="700" font-size="26" fill="#e7e5f0">
+    <rect x="130" y="630" width="820" height="76" rx="38" fill="#16131f" stroke="#3ee6a8" stroke-width="1.5"/>
+    <circle cx="200" cy="668" r="6" fill="#3ee6a8"/>
+    <text x="225" y="677">Des jeux en commun</text>
+
+    <rect x="130" y="726" width="820" height="76" rx="38" fill="#16131f" stroke="#3ee6a8" stroke-width="1.5"/>
+    <circle cx="200" cy="764" r="6" fill="#3ee6a8"/>
+    <text x="225" y="773">Des dispos qui matchent</text>
+
+    <rect x="130" y="822" width="820" height="76" rx="38" fill="#16131f" stroke="#3ee6a8" stroke-width="1.5"/>
+    <circle cx="200" cy="860" r="6" fill="#3ee6a8"/>
+    <text x="225" y="869">Connexion directe (code ami)</text>
+  </g>
+
+  <line x1="80" y1="980" x2="220" y2="980" stroke="#292339" stroke-width="1"/>
+  <text x="80" y="1024" font-family="ui-monospace, SF Mono, Menlo, monospace" font-size="24" letter-spacing="1" fill="#c9c6dc">matesync.fr</text>
+</svg>
