@@ -1,14 +1,8 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PrimaryButton } from "../components/PrimaryButton";
 import { supabase } from "../lib/supabase";
 import { colors } from "../lib/theme";
 
@@ -58,7 +52,7 @@ export default function LoginScreen() {
       setError("Code invalide ou expiré, réessaie.");
       return;
     }
-    router.replace("/profile-setup");
+    router.replace("/home");
   }
 
   return (
@@ -86,17 +80,12 @@ export default function LoginScreen() {
             autoComplete="email"
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Pressable
-            style={styles.btnPrimary}
+          <PrimaryButton
+            title="Recevoir le code"
             onPress={sendCode}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.btnPrimaryText}>Recevoir le code</Text>
-            )}
-          </Pressable>
+            loading={loading}
+            style={styles.btnPrimary}
+          />
         </>
       ) : (
         <>
@@ -114,17 +103,12 @@ export default function LoginScreen() {
             maxLength={12}
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Pressable
-            style={styles.btnPrimary}
+          <PrimaryButton
+            title="Valider"
             onPress={verifyCode}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.btnPrimaryText}>Valider</Text>
-            )}
-          </Pressable>
+            loading={loading}
+            style={styles.btnPrimary}
+          />
           <Pressable onPress={() => setStep("email")}>
             <Text style={styles.link}>Changer d&apos;email</Text>
           </Pressable>
@@ -169,15 +153,6 @@ const styles = StyleSheet.create({
   },
   btnPrimary: {
     marginTop: 20,
-    backgroundColor: colors.accent,
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  btnPrimaryText: {
-    color: "white",
-    fontWeight: "700",
-    fontSize: 16,
   },
   link: {
     marginTop: 16,

@@ -1,5 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PrimaryButton } from "../components/PrimaryButton";
 import { useAuth } from "../lib/auth-context";
 import { GAME_OPTIONS } from "../lib/games";
 import { supabase, type Console, type Frequency } from "../lib/supabase";
@@ -37,6 +38,9 @@ export default function ProfileSetupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
+  const isEdit = edit === "1";
+  const finishHref = isEdit ? "/profile" : "/home";
 
   const [stepIndex, setStepIndex] = useState(0);
   const step: Step = STEPS[stepIndex];
@@ -69,10 +73,17 @@ export default function ProfileSetupScreen() {
           if (data.frequency) setFrequency(data.frequency);
           if (data.switch_friend_code) setFriendCode(data.switch_friend_code);
 
-          // Resume at the first step that hasn't been completed yet.
-          if (!data.console) setStepIndex(0);
-          else if (!data.pseudo) setStepIndex(1);
-          else if (!data.avatar_url) setStepIndex(5);
+          // Resume at the first step that hasn't been completed yet,
+          // unless explicitly opened to edit — then always start from the top.
+          if (isEdit) {
+            setStepIndex(0);
+          } else if (!data.console) {
+            setStepIndex(0);
+          } else if (!data.pseudo) {
+            setStepIndex(1);
+          } else {
+            setStepIndex(5);
+          }
         }
         setReady(true);
       });
@@ -89,7 +100,7 @@ export default function ProfileSetupScreen() {
     if (stepIndex < STEPS.length - 1) {
       setStepIndex(stepIndex + 1);
     } else {
-      router.replace("/home");
+      router.replace(finishHref);
     }
   }
 
@@ -158,7 +169,7 @@ export default function ProfileSetupScreen() {
 
   async function handlePhotoFinish() {
     if (!avatarUri || !session) {
-      router.replace("/home");
+      router.replace(finishHref);
       return;
     }
     setLoading(true);
@@ -179,7 +190,7 @@ export default function ProfileSetupScreen() {
       await supabase
         .from("profiles")
         .upsert({ id: session.user.id, avatar_url: data.publicUrl });
-      router.replace("/home");
+      router.replace(finishHref);
     } catch {
       setError("Impossible d'envoyer la photo, réessaie.");
     } finally {
@@ -233,17 +244,13 @@ export default function ProfileSetupScreen() {
             ))}
           </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Pressable
-            style={[styles.btnPrimary, !consoleType && styles.btnDisabled]}
+          <PrimaryButton
+            title="Continuer"
             onPress={handleConsoleContinue}
-            disabled={!consoleType || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.btnPrimaryText}>Continuer</Text>
-            )}
-          </Pressable>
+            disabled={!consoleType}
+            loading={loading}
+            style={styles.btnPrimary}
+          />
         </>
       )}
 
@@ -263,20 +270,13 @@ export default function ProfileSetupScreen() {
             maxLength={24}
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Pressable
-            style={[
-              styles.btnPrimary,
-              pseudo.trim().length < 2 && styles.btnDisabled,
-            ]}
+          <PrimaryButton
+            title="Continuer"
             onPress={handlePseudoContinue}
-            disabled={pseudo.trim().length < 2 || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.btnPrimaryText}>Continuer</Text>
-            )}
-          </Pressable>
+            disabled={pseudo.trim().length < 2}
+            loading={loading}
+            style={styles.btnPrimary}
+          />
         </>
       )}
 
@@ -310,17 +310,12 @@ export default function ProfileSetupScreen() {
             <Pressable style={styles.btnGhostSmall} onPress={goNext}>
               <Text style={styles.btnGhostText}>Passer</Text>
             </Pressable>
-            <Pressable
-              style={[styles.btnPrimary, styles.btnFlex]}
+            <PrimaryButton
+              title="Continuer"
               onPress={handleGamesContinue}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.btnPrimaryText}>Continuer</Text>
-              )}
-            </Pressable>
+              loading={loading}
+              style={styles.btnFlex}
+            />
           </View>
         </>
       )}
@@ -354,17 +349,12 @@ export default function ProfileSetupScreen() {
             <Pressable style={styles.btnGhostSmall} onPress={goNext}>
               <Text style={styles.btnGhostText}>Passer</Text>
             </Pressable>
-            <Pressable
-              style={[styles.btnPrimary, styles.btnFlex]}
+            <PrimaryButton
+              title="Continuer"
               onPress={handleFrequencyContinue}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.btnPrimaryText}>Continuer</Text>
-              )}
-            </Pressable>
+              loading={loading}
+              style={styles.btnFlex}
+            />
           </View>
         </>
       )}
@@ -389,17 +379,12 @@ export default function ProfileSetupScreen() {
             <Pressable style={styles.btnGhostSmall} onPress={goNext}>
               <Text style={styles.btnGhostText}>Passer</Text>
             </Pressable>
-            <Pressable
-              style={[styles.btnPrimary, styles.btnFlex]}
+            <PrimaryButton
+              title="Continuer"
               onPress={handleFriendCodeContinue}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.btnPrimaryText}>Continuer</Text>
-              )}
-            </Pressable>
+              loading={loading}
+              style={styles.btnFlex}
+            />
           </View>
         </>
       )}
@@ -418,19 +403,12 @@ export default function ProfileSetupScreen() {
           </Pressable>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Pressable
-            style={styles.btnPrimary}
+          <PrimaryButton
+            title={avatarUri ? "Terminer" : "Terminer sans photo"}
             onPress={handlePhotoFinish}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.btnPrimaryText}>
-                {avatarUri ? "Terminer" : "Terminer sans photo"}
-              </Text>
-            )}
-          </Pressable>
+            loading={loading}
+            style={styles.btnPrimary}
+          />
         </>
       )}
     </ScrollView>
@@ -589,17 +567,5 @@ const styles = StyleSheet.create({
   },
   btnPrimary: {
     marginTop: 28,
-    backgroundColor: colors.accent,
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  btnDisabled: {
-    opacity: 0.4,
-  },
-  btnPrimaryText: {
-    color: "white",
-    fontWeight: "700",
-    fontSize: 16,
   },
 });

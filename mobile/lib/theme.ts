@@ -9,3 +9,5 @@ export const colors = {
   accent2: "#ff5c9d",
   mint: "#3ee6a8",
 };
+
+export const gradient = [colors.accent, colors.accent2] as const;
