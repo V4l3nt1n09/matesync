@@ -40,6 +40,14 @@
           "photosPermission": "MateSync a besoin d'accéder à tes photos pour choisir ta photo de profil.",
           "cameraPermission": "MateSync a besoin de la caméra pour prendre ta photo de profil."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0b0d17",
+          "image": "./assets/splash-blank.png",
+          "imageWidth": 1
+        }
       ]
     ],
     "extra": {
