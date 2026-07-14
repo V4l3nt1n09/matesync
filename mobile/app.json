@@ -12,16 +12,21 @@
       "typedRoutes": true
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.matesync.app"
     },
     "android": {
+      "package": "com.matesync.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +41,13 @@
           "cameraPermission": "MateSync a besoin de la caméra pour prendre ta photo de profil."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "01bb11ed-2096-41d1-8e37-5f686e7755c4"
+      }
+    },
+    "owner": "v4l3nt1n"
   }
 }
