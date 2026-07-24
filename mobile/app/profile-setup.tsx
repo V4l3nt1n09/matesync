@@ -14,6 +14,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { useAuth } from "../lib/auth-context";
+import { DEMO_PROFILE } from "../lib/demo-data";
+import { isDemoMode } from "../lib/demo-mode";
 import { GAME_OPTIONS } from "../lib/games";
 import { supabase, type Console, type Frequency } from "../lib/supabase";
 import { colors } from "../lib/theme";
@@ -57,6 +59,16 @@ export default function ProfileSetupScreen() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setConsoleType(DEMO_PROFILE.console);
+      setPseudo(DEMO_PROFILE.pseudo ?? "");
+      setSelectedGames(DEMO_PROFILE.favorite_games);
+      setFrequency(DEMO_PROFILE.frequency);
+      setFriendCode(DEMO_PROFILE.switch_friend_code ?? "");
+      setStepIndex(isEdit ? 0 : 5);
+      setReady(true);
+      return;
+    }
     if (!session) return;
     supabase
       .from("profiles")
@@ -105,6 +117,7 @@ export default function ProfileSetupScreen() {
   }
 
   async function saveField(fields: Record<string, unknown>) {
+    if (isDemoMode) return true;
     if (!session) return true;
     setLoading(true);
     setError("");
@@ -168,6 +181,10 @@ export default function ProfileSetupScreen() {
   }
 
   async function handlePhotoFinish() {
+    if (isDemoMode) {
+      router.replace(finishHref);
+      return;
+    }
     if (!avatarUri || !session) {
       router.replace(finishHref);
       return;

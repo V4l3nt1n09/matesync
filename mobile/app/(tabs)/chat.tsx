@@ -13,6 +13,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GradientAvatar } from "../../components/GradientAvatar";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { useAuth } from "../../lib/auth-context";
+import {
+  addDemoFriendRequest,
+  DEMO_USER_ID,
+  demoStore,
+  updateDemoFriendRequestStatus,
+} from "../../lib/demo-data";
+import { isDemoMode } from "../../lib/demo-mode";
 import { useProfile } from "../../lib/profile-context";
 import {
   supabase,
@@ -77,6 +84,79 @@ export default function ChatScreen() {
   const [metPlayers, setMetPlayers] = useState<MetPlayer[]>([]);
 
   const loadConversations = useCallback(async () => {
+    if (isDemoMode) {
+      const myId = DEMO_USER_ID;
+      const hosted = demoStore.sessions.filter((s) => s.creator_id === myId);
+      const acceptedSessions = demoStore.sessionRequests
+        .filter((r) => r.requester_id === myId && r.status === "accepted")
+        .map((r) => demoStore.sessions.find((s) => s.id === r.session_id))
+        .filter((s): s is GameSession => !!s);
+
+      const sessionsById = new Map<string, GameSession>();
+      for (const s of hosted) sessionsById.set(s.id, s);
+      for (const s of acceptedSessions) sessionsById.set(s.id, s);
+      const sessionIds = [...sessionsById.keys()];
+
+      const acceptedCountBySession = new Map<string, number>();
+      for (const r of demoStore.sessionRequests.filter(
+        (req) => sessionIds.includes(req.session_id) && req.status === "accepted",
+      )) {
+        acceptedCountBySession.set(
+          r.session_id,
+          (acceptedCountBySession.get(r.session_id) ?? 0) + 1,
+        );
+      }
+      const lastMessageBySession = new Map<string, SessionMessage>();
+      for (const sid of sessionIds) {
+        const msgs = demoStore.sessionMessages[sid] ?? [];
+        const last = [...msgs].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        )[0];
+        if (last) lastMessageBySession.set(sid, last);
+      }
+
+      const sessionConvos: SessionConvo[] = [...sessionsById.values()].map((s) => {
+        const last = lastMessageBySession.get(s.id);
+        return {
+          kind: "session",
+          session: s,
+          participantCount: (acceptedCountBySession.get(s.id) ?? 0) + 1,
+          lastMessageAt: last?.created_at ?? s.created_at,
+          lastMessagePreview: last?.content ?? null,
+        };
+      });
+
+      const friendRows = demoStore.friendRequests.filter(
+        (fr) =>
+          fr.status === "accepted" && (fr.requester_id === myId || fr.addressee_id === myId),
+      );
+      const directConvos: DirectConvo[] = [];
+      for (const fr of friendRows) {
+        const otherId = otherFriendId(fr, myId);
+        const msgs = demoStore.directMessages[otherId] ?? [];
+        const last = [...msgs].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        )[0];
+        if (last) {
+          directConvos.push({
+            kind: "direct",
+            otherId,
+            otherPseudo: otherFriendPseudo(fr, myId),
+            otherAvatarUrl: otherFriendAvatar(fr, myId),
+            lastMessageAt: last.created_at,
+            lastMessagePreview: last.content,
+          });
+        }
+      }
+
+      setConvos(
+        [...sessionConvos, ...directConvos].sort(
+          (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime(),
+        ),
+      );
+      return;
+    }
+
     if (!session) return;
     const myId = session.user.id;
 
@@ -172,6 +252,74 @@ export default function ChatScreen() {
   }, [session]);
 
   const loadAmis = useCallback(async () => {
+    if (isDemoMode) {
+      const myId = DEMO_USER_ID;
+      setReceived(
+        demoStore.friendRequests.filter(
+          (fr) => fr.addressee_id === myId && fr.status === "pending",
+        ),
+      );
+      const friendRows = demoStore.friendRequests.filter(
+        (fr) =>
+          fr.status === "accepted" && (fr.requester_id === myId || fr.addressee_id === myId),
+      );
+      setFriends(friendRows);
+
+      const excludedIds = new Set<string>([myId]);
+      for (const fr of friendRows) excludedIds.add(otherFriendId(fr, myId));
+      for (const fr of demoStore.friendRequests.filter(
+        (f) => f.status === "pending" && (f.requester_id === myId || f.addressee_id === myId),
+      )) {
+        excludedIds.add(otherFriendId(fr, myId));
+      }
+
+      const met = new Map<string, MetPlayer>();
+      const hostedIds = demoStore.sessions
+        .filter((s) => s.creator_id === myId)
+        .map((s) => s.id);
+      for (const r of demoStore.sessionRequests.filter(
+        (req) => hostedIds.includes(req.session_id) && req.status === "accepted",
+      )) {
+        if (!excludedIds.has(r.requester_id)) {
+          met.set(r.requester_id, {
+            id: r.requester_id,
+            pseudo: r.requester_pseudo,
+            avatarUrl: r.requester_avatar_url,
+            liked: null,
+          });
+        }
+      }
+      for (const r of demoStore.sessionRequests.filter(
+        (req) => req.requester_id === myId && req.status === "accepted",
+      )) {
+        const s = demoStore.sessions.find((sess) => sess.id === r.session_id);
+        if (s && !excludedIds.has(s.creator_id)) {
+          met.set(s.creator_id, {
+            id: s.creator_id,
+            pseudo: s.creator_pseudo,
+            avatarUrl: s.creator_avatar_url,
+            liked: null,
+          });
+        }
+      }
+
+      for (const [id, player] of met) {
+        const rating = demoStore.playerRatings.find(
+          (r) => r.rater_id === myId && r.ratee_id === id,
+        );
+        if (rating) player.liked = rating.liked;
+      }
+
+      setMetPlayers(
+        [...met.values()].sort((a, b) => {
+          const scoreA = a.liked === true ? 0 : a.liked === false ? 2 : 1;
+          const scoreB = b.liked === true ? 0 : b.liked === false ? 2 : 1;
+          return scoreA - scoreB;
+        }),
+      );
+      return;
+    }
+
     if (!session) return;
     const myId = session.user.id;
 
@@ -276,6 +424,30 @@ export default function ChatScreen() {
   );
 
   async function sendFriendRequest(otherId: string, otherPseudo: string, otherAvatarUrl: string | null) {
+    if (isDemoMode) {
+      const myId = DEMO_USER_ID;
+      const reverse = demoStore.friendRequests.find(
+        (fr) => fr.requester_id === otherId && fr.addressee_id === myId && fr.status === "pending",
+      );
+      if (reverse) {
+        updateDemoFriendRequestStatus(reverse.id, "accepted");
+      } else {
+        addDemoFriendRequest({
+          id: `demo-fr-${Date.now()}`,
+          requester_id: myId,
+          requester_pseudo: profile?.pseudo ?? "",
+          requester_avatar_url: profile?.avatar_url ?? null,
+          addressee_id: otherId,
+          addressee_pseudo: otherPseudo,
+          addressee_avatar_url: otherAvatarUrl,
+          status: "pending",
+          created_at: new Date().toISOString(),
+          decided_at: null,
+        });
+      }
+      loadAmis();
+      return;
+    }
     if (!session || !profile) return;
     const myId = session.user.id;
 
@@ -306,6 +478,12 @@ export default function ChatScreen() {
   }
 
   async function respondToFriendRequest(requestId: string, status: "accepted" | "declined") {
+    if (isDemoMode) {
+      updateDemoFriendRequestStatus(requestId, status);
+      loadAmis();
+      loadConversations();
+      return;
+    }
     await supabase
       .from("friend_requests")
       .update({ status, decided_at: new Date().toISOString() })

@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { DEMO_PROFILE } from "./demo-data";
+import { isDemoMode } from "./demo-mode";
 import { supabase, type Profile } from "./supabase";
 import { useAuth } from "./auth-context";
 
@@ -20,6 +22,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    if (isDemoMode) {
+      setProfile(DEMO_PROFILE);
+      setLoading(false);
+      return;
+    }
     if (!session) {
       setProfile(null);
       setLoading(false);

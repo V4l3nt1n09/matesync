@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ProfileView } from "../../components/ProfileView";
+import { DEMO_GAME_COUNTS, DEMO_PUBLIC_PROFILES } from "../../lib/demo-data";
+import { isDemoMode } from "../../lib/demo-mode";
 import { supabase } from "../../lib/supabase";
 import { colors } from "../../lib/theme";
 
@@ -24,6 +26,13 @@ export default function PlayerProfileScreen() {
 
   useEffect(() => {
     if (!id) return;
+    if (isDemoMode) {
+      const p = DEMO_PUBLIC_PROFILES[id];
+      setProfile(p ?? null);
+      setGameCounts(DEMO_GAME_COUNTS[id] ?? {});
+      setLoading(false);
+      return;
+    }
     Promise.all([
       supabase.rpc("get_public_profile", { p_user_id: id }).then(({ data }) => data?.[0] ?? null),
       supabase.rpc("get_player_game_session_counts", { p_user_id: id }).then(({ data }) => data ?? []),

@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GradientAvatar } from "../../components/GradientAvatar";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { useAuth } from "../../lib/auth-context";
+import { DEMO_NEWS, DEMO_USER_ID, demoStore } from "../../lib/demo-data";
+import { isDemoMode } from "../../lib/demo-mode";
 import { formatCreneau } from "../../lib/format";
 import { useProfile } from "../../lib/profile-context";
 import {
@@ -47,6 +49,121 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (isDemoMode) {
+        const myId = DEMO_USER_ID;
+        const now = new Date();
+
+        const hosted = demoStore.sessions.filter(
+          (s) => s.creator_id === myId && new Date(s.expires_at) > now,
+        );
+        const acceptedSessions = demoStore.sessionRequests
+          .filter((r) => r.requester_id === myId && r.status === "accepted")
+          .map((r) => demoStore.sessions.find((s) => s.id === r.session_id))
+          .filter((s): s is GameSession => !!s && new Date(s.expires_at) > now);
+
+        const sessionsById = new Map<string, GameSession>();
+        for (const s of hosted) sessionsById.set(s.id, s);
+        for (const s of acceptedSessions) sessionsById.set(s.id, s);
+
+        const mySessions = [...sessionsById.values()];
+        setActiveCount(mySessions.length);
+        const next = mySessions.sort(
+          (a, b) =>
+            new Date(a.scheduled_at ?? a.created_at).getTime() -
+            new Date(b.scheduled_at ?? b.created_at).getTime(),
+        )[0];
+        setNextSession(next ?? null);
+
+        setFriendsCount(
+          demoStore.friendRequests.filter(
+            (fr) =>
+              fr.status === "accepted" &&
+              (fr.requester_id === myId || fr.addressee_id === myId),
+          ).length,
+        );
+
+        if (profile?.favorite_games?.length) {
+          setRecommended(
+            demoStore.sessions
+              .filter(
+                (s) =>
+                  s.creator_id !== myId &&
+                  profile.favorite_games.includes(s.game) &&
+                  new Date(s.expires_at) > now,
+              )
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .slice(0, 3),
+          );
+        } else {
+          setRecommended([]);
+        }
+
+        const items: ActivityItem[] = [];
+
+        for (const fr of demoStore.friendRequests.filter(
+          (f) => f.addressee_id === myId && f.status === "pending",
+        )) {
+          items.push({
+            id: `fr-in-${fr.id}`,
+            text: `${fr.requester_pseudo} veut devenir ton ami`,
+            timestamp: fr.created_at,
+            pseudo: fr.requester_pseudo,
+            avatarUrl: fr.requester_avatar_url,
+            onPress: () => router.push("/chat"),
+          });
+        }
+
+        for (const fr of demoStore.friendRequests.filter(
+          (f) => f.requester_id === myId && f.status === "accepted",
+        )) {
+          items.push({
+            id: `fr-acc-${fr.id}`,
+            text: `${fr.addressee_pseudo} a accepté ta demande d'ami`,
+            timestamp: fr.decided_at ?? fr.created_at,
+            pseudo: fr.addressee_pseudo,
+            avatarUrl: fr.addressee_avatar_url,
+            onPress: () => router.push("/chat"),
+          });
+        }
+
+        const hostedIds = hosted.map((s) => s.id);
+        for (const r of demoStore.sessionRequests.filter(
+          (req) => hostedIds.includes(req.session_id) && req.status === "pending",
+        )) {
+          const s = demoStore.sessions.find((sess) => sess.id === r.session_id);
+          items.push({
+            id: `sr-in-${r.id}`,
+            text: `${r.requester_pseudo} veut rejoindre ${s?.game ?? "ta session"}`,
+            timestamp: r.created_at,
+            pseudo: r.requester_pseudo,
+            avatarUrl: r.requester_avatar_url,
+            onPress: () => router.push("/annonces"),
+          });
+        }
+
+        for (const r of demoStore.sessionRequests.filter(
+          (req) => req.requester_id === myId && req.status === "accepted",
+        )) {
+          const s = demoStore.sessions.find((sess) => sess.id === r.session_id);
+          if (s) {
+            items.push({
+              id: `sr-acc-${r.id}`,
+              text: `${s.creator_pseudo} a accepté ta demande pour ${s.game}`,
+              timestamp: r.decided_at ?? r.created_at,
+              pseudo: s.creator_pseudo,
+              avatarUrl: s.creator_avatar_url,
+              onPress: () => router.push(`/session-chat/${s.id}`),
+            });
+          }
+        }
+
+        items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        setActivity(items.slice(0, 5));
+
+        setNews(DEMO_NEWS);
+        return;
+      }
+
       if (!session) return;
       const myId = session.user.id;
       const nowIso = new Date().toISOString();

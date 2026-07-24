@@ -14,6 +14,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GradientAvatar } from "../../components/GradientAvatar";
 import { useAuth } from "../../lib/auth-context";
+import {
+  addDemoSessionMessage,
+  DEMO_USER_ID,
+  demoStore,
+  setDemoPlayerRating,
+} from "../../lib/demo-data";
+import { isDemoMode } from "../../lib/demo-mode";
 import { useProfile } from "../../lib/profile-context";
 import {
   supabase,
@@ -46,6 +53,47 @@ export default function SessionChatScreen() {
   const myId = session?.user.id ?? "";
 
   const load = useCallback(async () => {
+    if (isDemoMode) {
+      if (!id) return;
+      const s = demoStore.sessions.find((sess) => sess.id === id) ?? null;
+      setGameSession(s);
+      setMessages(demoStore.sessionMessages[id] ?? []);
+
+      if (s) {
+        const requests = demoStore.sessionRequests.filter(
+          (r) => r.session_id === id && r.status === "accepted",
+        );
+        const others: Participant[] = [];
+        if (s.creator_id !== DEMO_USER_ID) {
+          others.push({
+            id: s.creator_id,
+            pseudo: s.creator_pseudo,
+            avatarUrl: s.creator_avatar_url,
+          });
+        }
+        for (const r of requests) {
+          if (r.requester_id !== DEMO_USER_ID) {
+            others.push({
+              id: r.requester_id,
+              pseudo: r.requester_pseudo,
+              avatarUrl: r.requester_avatar_url,
+            });
+          }
+        }
+        setParticipants(others);
+
+        const map: Record<string, boolean> = {};
+        for (const o of others) {
+          const rating = demoStore.playerRatings.find(
+            (r) => r.rater_id === DEMO_USER_ID && r.ratee_id === o.id,
+          );
+          if (rating) map[o.id] = rating.liked;
+        }
+        setRatings(map);
+      }
+      return;
+    }
+
     if (!id || !myId) return;
     const { data: s } = await supabase.from("sessions").select("*").eq("id", id).maybeSingle();
     setGameSession(s);
@@ -98,6 +146,7 @@ export default function SessionChatScreen() {
   }, [load]);
 
   useEffect(() => {
+    if (isDemoMode) return;
     if (!id) return;
     const channel = supabase
       .channel(`session-messages-${id}`)
@@ -116,7 +165,22 @@ export default function SessionChatScreen() {
 
   async function send() {
     const content = text.trim();
-    if (!content || !session || !profile || !id) return;
+    if (!content || !id) return;
+    if (isDemoMode) {
+      setText("");
+      const msg: SessionMessage = {
+        id: `demo-sm-${Date.now()}`,
+        session_id: id,
+        sender_id: DEMO_USER_ID,
+        sender_pseudo: profile?.pseudo ?? "",
+        content,
+        created_at: new Date().toISOString(),
+      };
+      addDemoSessionMessage(id, msg);
+      setMessages((prev) => [...prev, msg]);
+      return;
+    }
+    if (!session || !profile) return;
     setText("");
     await supabase.from("session_messages").insert({
       session_id: id,
@@ -127,7 +191,21 @@ export default function SessionChatScreen() {
   }
 
   async function rate(other: Participant, liked: boolean) {
-    if (!myId || !id) return;
+    if (!id) return;
+    if (isDemoMode) {
+      setRatings((prev) => ({ ...prev, [other.id]: liked }));
+      setDemoPlayerRating({
+        rater_id: DEMO_USER_ID,
+        ratee_id: other.id,
+        ratee_pseudo: other.pseudo,
+        ratee_avatar_url: other.avatarUrl,
+        liked,
+        session_id: id,
+        updated_at: new Date().toISOString(),
+      });
+      return;
+    }
+    if (!myId) return;
     setRatings((prev) => ({ ...prev, [other.id]: liked }));
     await supabase.from("player_ratings").upsert({
       rater_id: myId,

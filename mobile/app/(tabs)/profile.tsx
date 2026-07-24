@@ -4,6 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ProfileView } from "../../components/ProfileView";
 import { useAuth } from "../../lib/auth-context";
+import { DEMO_GAME_COUNTS, DEMO_USER_ID } from "../../lib/demo-data";
+import { isDemoMode } from "../../lib/demo-mode";
 import { useProfile } from "../../lib/profile-context";
 import { supabase } from "../../lib/supabase";
 import { colors } from "../../lib/theme";
@@ -17,6 +19,10 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (isDemoMode) {
+        setGameCounts(DEMO_GAME_COUNTS[DEMO_USER_ID] ?? {});
+        return;
+      }
       if (!session) return;
       supabase
         .rpc("get_player_game_session_counts", { p_user_id: session.user.id })
@@ -48,10 +54,17 @@ export default function ProfileScreen() {
       />
 
       <Pressable
-        style={[styles.btnGhost, styles.btnGhostFirst]}
+        style={[
+          styles.btnGhost,
+          styles.btnGhostFirst,
+          isDemoMode && styles.btnGhostDisabled,
+        ]}
+        disabled={isDemoMode}
         onPress={() => supabase.auth.signOut()}
       >
-        <Text style={styles.btnGhostText}>Se déconnecter</Text>
+        <Text style={styles.btnGhostText}>
+          {isDemoMode ? "Déconnexion indisponible en démo" : "Se déconnecter"}
+        </Text>
       </Pressable>
     </ScrollView>
   );
@@ -68,6 +81,9 @@ const styles = StyleSheet.create({
   },
   btnGhostFirst: {
     marginTop: 32,
+  },
+  btnGhostDisabled: {
+    opacity: 0.4,
   },
   btnGhost: {
     borderWidth: 1,

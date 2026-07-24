@@ -14,6 +14,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GradientAvatar } from "../../components/GradientAvatar";
 import { useAuth } from "../../lib/auth-context";
+import { addDemoDirectMessage, DEMO_PUBLIC_PROFILES, demoStore } from "../../lib/demo-data";
+import { isDemoMode } from "../../lib/demo-mode";
 import { supabase, type DirectMessage, type FriendRequest } from "../../lib/supabase";
 import { colors, gradient } from "../../lib/theme";
 
@@ -33,6 +35,17 @@ export default function DirectChatScreen() {
   const [userA, userB] = myId && userId ? [myId, userId].sort() : ["", ""];
 
   const load = useCallback(async () => {
+    if (isDemoMode) {
+      if (!userId) return;
+      const p = DEMO_PUBLIC_PROFILES[userId];
+      if (p) {
+        setOtherPseudo(p.pseudo);
+        setOtherAvatarUrl(p.avatar_url);
+      }
+      setMessages(demoStore.directMessages[userId] ?? []);
+      return;
+    }
+
     if (!myId || !userId) return;
 
     const { data: fr } = await supabase
@@ -66,6 +79,7 @@ export default function DirectChatScreen() {
   }, [load]);
 
   useEffect(() => {
+    if (isDemoMode) return;
     if (!userA || !userB) return;
     const channel = supabase
       .channel(`direct-messages-${userA}-${userB}`)
@@ -92,7 +106,22 @@ export default function DirectChatScreen() {
 
   async function send() {
     const content = text.trim();
-    if (!content || !myId || !userA || !userB) return;
+    if (!content || !userId) return;
+    if (isDemoMode) {
+      setText("");
+      const msg: DirectMessage = {
+        id: `demo-dm-${Date.now()}`,
+        user_a: userA,
+        user_b: userB,
+        sender_id: myId,
+        content,
+        created_at: new Date().toISOString(),
+      };
+      addDemoDirectMessage(userId, msg);
+      setMessages((prev) => [...prev, msg]);
+      return;
+    }
+    if (!myId || !userA || !userB) return;
     setText("");
     await supabase.from("direct_messages").insert({
       user_a: userA,

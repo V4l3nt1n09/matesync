@@ -4,6 +4,8 @@ import { Redirect, Tabs } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "../../lib/auth-context";
+import { DEMO_USER_ID, demoStore } from "../../lib/demo-data";
+import { isDemoMode } from "../../lib/demo-mode";
 import { useProfile } from "../../lib/profile-context";
 import { supabase } from "../../lib/supabase";
 import { colors } from "../../lib/theme";
@@ -16,6 +18,34 @@ export default function TabsLayout() {
   const [chatBadge, setChatBadge] = useState(false);
 
   useEffect(() => {
+    if (isDemoMode) {
+      let cancelled = false;
+
+      async function checkDemo() {
+        const lastViewed =
+          (await AsyncStorage.getItem(CHAT_LAST_VIEWED_KEY)) ?? "1970-01-01T00:00:00.000Z";
+        const pendingCount = demoStore.friendRequests.filter(
+          (fr) => fr.addressee_id === DEMO_USER_ID && fr.status === "pending",
+        ).length;
+        const hasNewSessionMsg = Object.values(demoStore.sessionMessages)
+          .flat()
+          .some((m) => m.sender_id !== DEMO_USER_ID && m.created_at > lastViewed);
+        const hasNewDirectMsg = Object.values(demoStore.directMessages)
+          .flat()
+          .some((m) => m.sender_id !== DEMO_USER_ID && m.created_at > lastViewed);
+        if (!cancelled) {
+          setChatBadge(pendingCount > 0 || hasNewSessionMsg || hasNewDirectMsg);
+        }
+      }
+
+      checkDemo();
+      const demoInterval = setInterval(checkDemo, 20000);
+      return () => {
+        cancelled = true;
+        clearInterval(demoInterval);
+      };
+    }
+
     if (!session) return;
     let cancelled = false;
 

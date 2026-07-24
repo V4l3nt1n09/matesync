@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,6 +12,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GradientAvatar } from "../../components/GradientAvatar";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { useAuth } from "../../lib/auth-context";
+import {
+  addDemoSessionRequest,
+  DEMO_REVEALED_CODE,
+  DEMO_USER_ID,
+  demoStore,
+  removeDemoSession,
+  updateDemoSessionRequestStatus,
+} from "../../lib/demo-data";
+import { isDemoMode } from "../../lib/demo-mode";
 import { formatCreneau } from "../../lib/format";
 import { useProfile } from "../../lib/profile-context";
 import {
@@ -51,6 +60,40 @@ export default function AnnoncesScreen() {
   const [revealedCodes, setRevealedCodes] = useState<Record<string, string>>({});
 
   const loadDisponibles = useCallback(async () => {
+    if (isDemoMode) {
+      if (!profile?.favorite_games?.length) {
+        setAvailable([]);
+        return;
+      }
+      const nowIso = new Date().toISOString();
+      const sessionsData = demoStore.sessions.filter(
+        (s) =>
+          s.creator_id !== DEMO_USER_ID &&
+          profile.favorite_games.includes(s.game) &&
+          s.expires_at > nowIso,
+      );
+      const ids = sessionsData.map((s) => s.id);
+      const requestMap = new Map(
+        demoStore.sessionRequests
+          .filter((r) => r.requester_id === DEMO_USER_ID)
+          .map((r) => [r.session_id, r]),
+      );
+      const acceptedBySession = new Map<string, number>();
+      for (const r of demoStore.sessionRequests.filter(
+        (req) => ids.includes(req.session_id) && req.status === "accepted",
+      )) {
+        acceptedBySession.set(r.session_id, (acceptedBySession.get(r.session_id) ?? 0) + 1);
+      }
+      setAvailable(
+        sessionsData.map((s) => ({
+          session: s,
+          request: requestMap.get(s.id) ?? null,
+          acceptedCount: acceptedBySession.get(s.id) ?? 0,
+        })),
+      );
+      return;
+    }
+
     if (!session || !profile?.favorite_games?.length) {
       setAvailable([]);
       return;
@@ -113,6 +156,43 @@ export default function AnnoncesScreen() {
   }, [session, profile]);
 
   const loadMine = useCallback(async () => {
+    if (isDemoMode) {
+      const nowIso = new Date().toISOString();
+      const created = demoStore.sessions.filter(
+        (s) => s.creator_id === DEMO_USER_ID && s.expires_at > nowIso,
+      );
+      const ids = created.map((s) => s.id);
+      const pendingBySession = new Map<string, SessionRequest[]>();
+      const acceptedBySession = new Map<string, number>();
+      for (const r of demoStore.sessionRequests.filter((req) => ids.includes(req.session_id))) {
+        if (r.status === "pending") {
+          const arr = pendingBySession.get(r.session_id) ?? [];
+          arr.push(r);
+          pendingBySession.set(r.session_id, arr);
+        } else if (r.status === "accepted") {
+          acceptedBySession.set(r.session_id, (acceptedBySession.get(r.session_id) ?? 0) + 1);
+        }
+      }
+      setMySessions(
+        created.map((s) => ({
+          session: s,
+          pending: pendingBySession.get(s.id) ?? [],
+          acceptedCount: acceptedBySession.get(s.id) ?? 0,
+        })),
+      );
+      setMyRequests(
+        demoStore.sessionRequests
+          .filter((r) => r.requester_id === DEMO_USER_ID)
+          .map((r) => {
+            const s = demoStore.sessions.find((sess) => sess.id === r.session_id);
+            return s ? ({ ...r, session: s } as SentRequest) : null;
+          })
+          .filter((r): r is SentRequest => !!r)
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+      );
+      return;
+    }
+
     if (!session) return;
     const nowIso = new Date().toISOString();
     const { data: created } = await supabase
@@ -167,7 +247,27 @@ export default function AnnoncesScreen() {
     loadAll();
   }, [loadAll]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (isDemoMode) loadAll();
+    }, [loadAll]),
+  );
+
   async function requestToJoin(sessionId: string) {
+    if (isDemoMode) {
+      addDemoSessionRequest({
+        id: `demo-req-${Date.now()}`,
+        session_id: sessionId,
+        requester_id: DEMO_USER_ID,
+        requester_pseudo: profile?.pseudo ?? "",
+        requester_avatar_url: profile?.avatar_url ?? null,
+        status: "pending",
+        created_at: new Date().toISOString(),
+        decided_at: null,
+      });
+      loadDisponibles();
+      return;
+    }
     if (!session || !profile) return;
     await supabase.from("session_requests").insert({
       session_id: sessionId,
@@ -179,6 +279,11 @@ export default function AnnoncesScreen() {
   }
 
   async function respondToRequest(requestId: string, status: "accepted" | "declined") {
+    if (isDemoMode) {
+      updateDemoSessionRequestStatus(requestId, status);
+      loadMine();
+      return;
+    }
     await supabase
       .from("session_requests")
       .update({ status, decided_at: new Date().toISOString() })
@@ -187,11 +292,20 @@ export default function AnnoncesScreen() {
   }
 
   async function deleteSession(sessionId: string) {
+    if (isDemoMode) {
+      removeDemoSession(sessionId);
+      loadMine();
+      return;
+    }
     await supabase.from("sessions").delete().eq("id", sessionId);
     loadMine();
   }
 
   async function revealCode(sessionId: string) {
+    if (isDemoMode) {
+      setRevealedCodes((prev) => ({ ...prev, [sessionId]: DEMO_REVEALED_CODE }));
+      return;
+    }
     const { data } = await supabase.rpc("get_host_friend_code", {
       p_session_id: sessionId,
     });

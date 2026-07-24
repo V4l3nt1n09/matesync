@@ -11,6 +11,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { useAuth } from "../lib/auth-context";
+import { addDemoSession, DEMO_USER_ID } from "../lib/demo-data";
+import { isDemoMode } from "../lib/demo-mode";
 import { useProfile } from "../lib/profile-context";
 import { supabase } from "../lib/supabase";
 import { colors } from "../lib/theme";
@@ -56,7 +58,26 @@ export default function CreateSessionScreen() {
   const myGames = profile?.favorite_games ?? [];
 
   async function publish() {
-    if (!session || !profile || !game) return;
+    if (!game) return;
+    if (isDemoMode) {
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 3);
+      addDemoSession({
+        id: `demo-created-${Date.now()}`,
+        creator_id: DEMO_USER_ID,
+        creator_pseudo: profile?.pseudo ?? "",
+        creator_avatar_url: profile?.avatar_url ?? null,
+        game,
+        description: description.trim() || null,
+        scheduled_at: computeScheduledAt(preset),
+        slots_total: slots,
+        created_at: new Date().toISOString(),
+        expires_at: expires.toISOString(),
+      });
+      router.replace("/annonces");
+      return;
+    }
+    if (!session || !profile) return;
     setLoading(true);
     setError("");
     const { error: insertError } = await supabase.from("sessions").insert({
