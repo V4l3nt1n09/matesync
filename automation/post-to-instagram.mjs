@@ -1,17 +1,18 @@
 #!/usr/bin/env node
-// Publie une image sur Instagram via l'API Graph (compte business).
+// Publie une image sur Instagram via l'API Instagram avec connexion Instagram
+// (Instagram API with Instagram Login — pas de Page Facebook nécessaire).
 // Usage: node post-to-instagram.mjs "Légende du post" "https://url.publique/image.png"
-// Requires INSTAGRAM_BUSINESS_ACCOUNT_ID_GRAPH, INSTAGRAM_ACCESS_TOKEN in the environment
+// Requires INSTAGRAM_USER_ID, INSTAGRAM_ACCESS_TOKEN (token IGAA...) in the environment
 // (source automation/.env before running).
 
-const GRAPH_API = "https://graph.facebook.com/v20.0";
+const GRAPH_API = "https://graph.instagram.com/v20.0";
 
 function getCredentials() {
-  const igUserId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID_GRAPH;
+  const igUserId = process.env.INSTAGRAM_USER_ID;
   const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
   if (!igUserId || !accessToken) {
     throw new Error(
-      "Missing INSTAGRAM_BUSINESS_ACCOUNT_ID_GRAPH or INSTAGRAM_ACCESS_TOKEN (check automation/.env is sourced)",
+      "Missing INSTAGRAM_USER_ID or INSTAGRAM_ACCESS_TOKEN (check automation/.env is sourced)",
     );
   }
   return { igUserId, accessToken };
@@ -29,6 +30,26 @@ async function createContainer(caption, imageUrl, credentials) {
     throw new Error(`Instagram container error (${response.status}): ${JSON.stringify(body)}`);
   }
   return body.id;
+}
+
+async function waitUntilReady(creationId, credentials) {
+  const url = new URL(`${GRAPH_API}/${creationId}`);
+  url.searchParams.set("fields", "status_code");
+  url.searchParams.set("access_token", credentials.accessToken);
+
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const response = await fetch(url);
+    const body = await response.json();
+    if (!response.ok) {
+      throw new Error(`Instagram status check error (${response.status}): ${JSON.stringify(body)}`);
+    }
+    if (body.status_code === "FINISHED") return;
+    if (body.status_code === "ERROR") {
+      throw new Error(`Instagram container processing failed: ${JSON.stringify(body)}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
+  throw new Error("Instagram container still not ready after 30s");
 }
 
 async function publishContainer(creationId, credentials) {
@@ -53,6 +74,7 @@ try {
   }
   const credentials = getCredentials();
   const creationId = await createContainer(caption, imageUrl, credentials);
+  await waitUntilReady(creationId, credentials);
   const result = await publishContainer(creationId, credentials);
   console.log("Post Instagram publié, media id :", result.id);
 } catch (err) {
