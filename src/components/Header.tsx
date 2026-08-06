@@ -8,12 +8,22 @@ export default function Header() {
           <Image src="/logo.svg" alt="" width={32} height={32} className="h-8 w-8 shrink-0" />
           MateSync
         </a>
-        <a
-          href="#rejoindre"
-          className="shrink-0 rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background transition hover:opacity-90 sm:px-4 sm:py-2 sm:text-sm"
-        >
-          Rejoindre
-        </a>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <a
+            href="https://demo.matesync.fr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-surface sm:px-4 sm:py-2 sm:text-sm"
+          >
+            Essayer la démo
+          </a>
+          <a
+            href="#rejoindre"
+            className="rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background transition hover:opacity-90 sm:px-4 sm:py-2 sm:text-sm"
+          >
+            Rejoindre
+          </a>
+        </div>
       </div>
     </header>
   );

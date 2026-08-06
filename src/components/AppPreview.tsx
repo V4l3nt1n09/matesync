@@ -67,6 +67,14 @@ export default function AppPreview() {
             De vraies captures de l&apos;app mobile MateSync, encore en cours
             de construction.
           </p>
+          <a
+            href="https://demo.matesync.fr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-block rounded-full bg-gradient-to-r from-accent to-accent-2 px-7 py-3 text-base font-semibold text-white transition hover:opacity-90"
+          >
+            Essayer la démo en ligne
+          </a>
         </div>
 
         <div className="mt-14 flex flex-wrap justify-center gap-10">
